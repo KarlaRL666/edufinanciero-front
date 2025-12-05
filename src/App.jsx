@@ -140,7 +140,7 @@ const Sidebar = ({ currentView, onNavigate, onLogout, user, mobileOpen, setMobil
   );
 };
 
-// --- PANTALLAS NUEVAS Y EXISTENTES ---
+// --- PANTALLAS ---
 
 const ProfileScreen = ({ user, onUpdateUser }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -204,7 +204,7 @@ const ProfileScreen = ({ user, onUpdateUser }) => {
               label="Correo Electrónico" 
               value={formData.email} 
               onChange={e => setFormData({...formData, email: e.target.value})}
-              disabled={!isEditing} // Email suele ser inmutable o requiere más validación
+              disabled={!isEditing}
             />
           </div>
         </div>
@@ -380,7 +380,7 @@ const LearnScreen = () => {
   const content = {
     tips: [
       { id: 1, title: "La regla del 50/30/20", desc: "Destina 50% a necesidades, 30% a deseos y 20% a ahorros.", icon: Lightbulb, color: "bg-yellow-100 text-yellow-700" },
-      { id: 2, title: "Fondo de Emergencia", desc: "Ahorra al menos 3 meses de tus gastos fijos para imprevistos.", icon: ShieldIcon, color: "bg-green-100 text-green-700" }, // Using ShieldIcon logic below
+      { id: 2, title: "Fondo de Emergencia", desc: "Ahorra al menos 3 meses de tus gastos fijos para imprevistos.", icon: Lock, color: "bg-green-100 text-green-700" },
       { id: 3, title: "Evita gastos hormiga", desc: "El café diario suma. Identifica pequeños gastos innecesarios.", icon: Target, color: "bg-red-100 text-red-700" }
     ],
     videos: [
@@ -393,9 +393,6 @@ const LearnScreen = () => {
       { id: 2, title: "Inversiones Avanzadas", modules: "8 Módulos", level: "Avanzado" }
     ]
   };
-
-  // Helper component icon wrapper if Shield isn't imported, fallback to Lock
-  const ShieldIcon = Lock; 
 
   return (
     <div className="animate-in fade-in slide-in-from-right-4 duration-500">
@@ -460,9 +457,7 @@ const LearnScreen = () => {
   );
 };
 
-
-// --- PANTALLAS EXISTENTES (Login, Register, Goals, GoalDetails...) ---
-// (Estas se mantienen casi iguales, solo Login/Register se definen abajo para el orden)
+// --- PANTALLAS DE LOGIN/REGISTRO Y DASHBOARD ---
 
 const LoginScreen = ({ onLogin, onNavigateToRegister }) => {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -479,9 +474,7 @@ const LoginScreen = ({ onLogin, onNavigateToRegister }) => {
     setError("");
 
     setTimeout(() => {
-      // Intentar recuperar usuario si existe en localStorage para persistencia real
       const savedUser = JSON.parse(localStorage.getItem(STORAGE_KEYS.CURRENT_USER));
-      
       const user = savedUser && savedUser.email === form.email 
         ? savedUser 
         : { id: 1, name: "Usuario Demo", email: form.email };
@@ -744,20 +737,18 @@ const Dashboard = ({ user, onNavigate }) => {
     const allTransactions = JSON.parse(localStorage.getItem(STORAGE_KEYS.TRANSACTIONS) || "[]");
     const userGoalIds = userGoals.map(g => g.id);
     
-    // Filtramos las transacciones que pertenecen a las metas de este usuario
     const userTransactions = allTransactions
       .filter(t => userGoalIds.includes(t.metaId))
       .map(t => {
-        // Enriquecemos la transacción con el nombre de la meta
         const goal = userGoals.find(g => g.id === t.metaId);
         return { ...t, goalTitle: goal ? goal.titulo : 'Meta desconocida' };
       })
-      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha) || b.id - a.id) // Ordenar por fecha o ID (descendente)
-      .slice(0, 5); // Tomar las últimas 5
+      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha) || b.id - a.id)
+      .slice(0, 5);
     
     setRecentTransactions(userTransactions);
 
-    // 3. Generar un tip aleatorio (simple)
+    // 3. Generar un tip aleatorio
     const tips = [
       { title: "La regla del 50/30/20", desc: "Destina 50% a necesidades, 30% a deseos y 20% a ahorros.", icon: Lightbulb, color: "bg-yellow-100 text-yellow-700" },
       { title: "Fondo de Emergencia", desc: "Ahorra al menos 3 meses de tus gastos fijos para imprevistos.", icon: Lock, color: "bg-green-100 text-green-700" },
@@ -792,7 +783,7 @@ const Dashboard = ({ user, onNavigate }) => {
          <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
       </div>
 
-      {/* Nueva Sección de Contenido Dinámico (Reemplaza el menú) */}
+      {/* Nueva Sección de Contenido Dinámico */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Columna Izquierda: Tip del día y Accesos */}
