@@ -59,7 +59,6 @@ const initializeDemoData = () => {
   }
   
   if (!localStorage.getItem(STORAGE_KEYS.GOALS)) {
-    // Datos de metas iniciales (igual que antes)
     const demoGoals = [
       { id: 1, userId: 1, titulo: "Viaje a la Playa", actual: 1500, objetivo: 5000, fechaLimite: "2024-12-31", completada: false, vencida: false },
       { id: 2, userId: 1, titulo: "Laptop Nueva", actual: 8000, objetivo: 25000, fechaLimite: "2024-10-15", completada: false, vencida: false }
@@ -151,7 +150,8 @@ const LoadingSpinner = ({ size = "md", text = "Cargando..." }) => {
   );
 };
 
-// --- MODAL DE RECOMPENSA (NUEVO) ---
+// --- MODALES (RECOMPENSA, VIDEO, CURSO) ---
+
 const RewardModal = ({ visible, reward, levelUp, onClose, userLevel }) => {
   if (!visible) return null;
 
@@ -159,7 +159,7 @@ const RewardModal = ({ visible, reward, levelUp, onClose, userLevel }) => {
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={onClose} />
       <div className="bg-white w-full max-w-md rounded-[2rem] p-8 relative z-10 text-center animate-in zoom-in-95 duration-300 shadow-2xl overflow-hidden">
-        {/* Efecto de confeti visual (simplificado con círculos) */}
+        {/* Efecto de confeti visual */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
             <div className="absolute top-10 left-10 w-4 h-4 bg-yellow-400 rounded-full animate-bounce delay-100"></div>
             <div className="absolute top-20 right-20 w-3 h-3 bg-red-400 rounded-full animate-bounce delay-300"></div>
@@ -211,6 +211,147 @@ const RewardModal = ({ visible, reward, levelUp, onClose, userLevel }) => {
     </div>
   );
 };
+
+const VideoModal = ({ video, onClose }) => {
+  if (!video) return null;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in" onClick={onClose} />
+      <div className="bg-black w-full max-w-4xl rounded-2xl overflow-hidden relative z-10 shadow-2xl animate-in zoom-in-95">
+        <div className="flex justify-between items-center p-4 bg-gray-900 text-white border-b border-gray-800">
+          <h3 className="font-bold truncate pr-4">{video.title}</h3>
+          <button onClick={onClose} className="hover:bg-gray-800 p-2 rounded-full transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="aspect-video w-full bg-black">
+          <iframe 
+            width="100%" 
+            height="100%" 
+            src={`https://www.youtube.com/embed/${video.youtubeId}?autoplay=1`} 
+            title={video.title}
+            frameBorder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowFullScreen
+          ></iframe>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const CourseModal = ({ course, onClose }) => {
+  const [progress, setProgress] = useState(0);
+  const [completedModules, setCompletedModules] = useState([]);
+
+  useEffect(() => {
+    if (course) {
+      setCompletedModules([]);
+      setProgress(0);
+    }
+  }, [course]);
+
+  const toggleModule = (moduleId) => {
+    let newCompleted;
+    if (completedModules.includes(moduleId)) {
+      newCompleted = completedModules.filter(id => id !== moduleId);
+    } else {
+      newCompleted = [...completedModules, moduleId];
+    }
+    setCompletedModules(newCompleted);
+    setProgress(Math.round((newCompleted.length / course.modulesList.length) * 100));
+  };
+
+  if (!course) return null;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={onClose} />
+      <div className="bg-white w-full max-w-2xl h-[80vh] rounded-[2rem] overflow-hidden relative z-10 shadow-2xl animate-in slide-in-from-bottom-10 flex flex-col">
+        
+        {/* Header del Curso */}
+        <div className="bg-indigo-600 p-8 text-white shrink-0 relative overflow-hidden">
+            <div className="absolute top-0 right-0 opacity-10 transform translate-x-10 -translate-y-10">
+                <GraduationCap size={150} />
+            </div>
+            <button onClick={onClose} className="absolute top-4 right-4 bg-black/20 hover:bg-black/40 p-2 rounded-full transition-colors text-white z-20">
+                <X size={20} />
+            </button>
+            <div className="relative z-10">
+                <span className="inline-block px-3 py-1 bg-white/20 text-white text-xs font-bold rounded-full mb-3 backdrop-blur-md">
+                    {course.level}
+                </span>
+                <h2 className="text-2xl md:text-3xl font-bold mb-2">{course.title}</h2>
+                <p className="text-indigo-100 text-sm">{course.modules} • Duración aprox: {course.duration}</p>
+            </div>
+        </div>
+
+        {/* Barra de Progreso */}
+        <div className="bg-indigo-50 px-8 py-4 border-b border-indigo-100 shrink-0">
+            <div className="flex justify-between text-sm font-bold text-indigo-900 mb-2">
+                <span>Tu Progreso</span>
+                <span>{progress}%</span>
+            </div>
+            <div className="w-full bg-indigo-200 rounded-full h-2 overflow-hidden">
+                <div 
+                    className="bg-indigo-600 h-2 rounded-full transition-all duration-500 ease-out" 
+                    style={{ width: `${progress}%` }}
+                ></div>
+            </div>
+        </div>
+
+        {/* Lista de Módulos (Scrollable) */}
+        <div className="overflow-y-auto flex-1 p-8 bg-gray-50">
+            <h3 className="font-bold text-gray-800 mb-4 uppercase text-xs tracking-wider">Temario del Curso</h3>
+            <div className="space-y-3">
+                {course.modulesList.map((module, index) => {
+                    const isDone = completedModules.includes(module.id);
+                    return (
+                        <div 
+                            key={module.id} 
+                            onClick={() => toggleModule(module.id)}
+                            className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center gap-4 group ${
+                                isDone 
+                                ? 'bg-green-50 border-green-200 shadow-sm' 
+                                : 'bg-white border-gray-200 hover:border-indigo-300 hover:shadow-md'
+                            }`}
+                        >
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                                isDone 
+                                ? 'bg-green-500 text-white' 
+                                : 'bg-gray-100 text-gray-400 group-hover:bg-indigo-100 group-hover:text-indigo-600'
+                            }`}>
+                                {isDone ? <CheckCircle2 size={16} /> : <span className="text-xs font-bold">{index + 1}</span>}
+                            </div>
+                            <div className="flex-1">
+                                <h4 className={`font-bold text-sm ${isDone ? 'text-green-800 line-through opacity-70' : 'text-gray-800'}`}>
+                                    {module.title}
+                                </h4>
+                                <p className="text-xs text-gray-500">{module.time}</p>
+                            </div>
+                            {!isDone && <PlayCircle size={20} className="text-gray-300 group-hover:text-indigo-500" />}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-200 bg-white shrink-0 flex justify-end">
+            {progress === 100 ? (
+                <Button className="w-full bg-green-600 hover:bg-green-700 shadow-green-200" onClick={onClose}>
+                    ¡Curso Completado! 🎉
+                </Button>
+            ) : (
+                <p className="text-xs text-center w-full text-gray-400">Marca los módulos conforme los vayas viendo</p>
+            )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 // --- COMPONENTES DE ESTRUCTURA (LAYOUT) ---
 const Sidebar = ({ currentView, onNavigate, onLogout, user, mobileOpen, setMobileOpen }) => {
@@ -296,12 +437,9 @@ const ProfileScreen = ({ user, onUpdateUser, showToast }) => {
     try {
       await simulateDelay(1000);
       const updatedUser = { ...user, ...formData };
-      // Actualizar en localStorage de usuarios
       const allUsers = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || "[]");
       const newAllUsers = allUsers.map(u => u.id === user.id ? updatedUser : u);
       localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(newAllUsers));
-      
-      // Actualizar sesión actual
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(updatedUser));
       
       onUpdateUser(updatedUser);
@@ -314,7 +452,6 @@ const ProfileScreen = ({ user, onUpdateUser, showToast }) => {
     }
   };
 
-  // Cálculos de nivel
   const currentLevel = user.level || 1;
   const currentXP = user.xp || 0;
   const xpForNextLevel = XP_PER_LEVEL;
@@ -329,7 +466,6 @@ const ProfileScreen = ({ user, onUpdateUser, showToast }) => {
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Tarjeta de Usuario */}
         <div className="md:col-span-2 space-y-8">
             <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100">
             <div className="flex flex-col md:flex-row items-center gap-6 mb-8">
@@ -342,7 +478,6 @@ const ProfileScreen = ({ user, onUpdateUser, showToast }) => {
                 <div className="text-center md:text-left flex-1">
                     <h3 className="text-2xl font-bold text-gray-800">{user.name}</h3>
                     <p className="text-gray-500">{user.email}</p>
-                    {/* Barra de XP */}
                     <div className="mt-4">
                         <div className="flex justify-between text-xs font-bold text-gray-500 mb-1">
                             <span>XP: {xpInCurrentLevel} / {xpForNextLevel}</span>
@@ -373,7 +508,6 @@ const ProfileScreen = ({ user, onUpdateUser, showToast }) => {
             </div>
             </div>
 
-            {/* Inventario de Recompensas */}
             <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100">
                 <h3 className="font-bold text-gray-800 text-lg mb-6 flex items-center gap-2">
                     <Gift className="text-purple-500" /> Tus Recompensas ({userInventory.length})
@@ -388,7 +522,6 @@ const ProfileScreen = ({ user, onUpdateUser, showToast }) => {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {userInventory.map((item, idx) => {
-                            // Encontrar detalles visuales
                             const visual = REWARDS_POOL.find(r => r.id === item.id) || { icon: Gift, color: 'text-gray-600 bg-gray-100' };
                             const Icon = visual.icon;
                             return (
@@ -408,7 +541,6 @@ const ProfileScreen = ({ user, onUpdateUser, showToast }) => {
             </div>
         </div>
 
-        {/* Estadísticas Rápidas */}
         <div className="space-y-6">
           <div className="bg-indigo-600 text-white p-6 rounded-[2rem] shadow-lg shadow-indigo-200">
             <div className="flex items-center gap-3 mb-2">
@@ -534,53 +666,140 @@ const SimulatorScreen = ({ showToast }) => {
   );
 };
 
+// --- LEARNSCREEN (ACTUALIZADO CON MODALES FUNCIONALES) ---
 const LearnScreen = () => {
   const [activeTab, setActiveTab] = useState('tips');
   const [loading, setLoading] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+
   const content = {
     tips: [
       { id: 1, title: "La regla del 50/30/20", desc: "Destina 50% a necesidades, 30% a deseos y 20% a ahorros.", icon: Lightbulb, color: "bg-yellow-100 text-yellow-700" },
       { id: 2, title: "Fondo de Emergencia", desc: "Ahorra al menos 3 meses de tus gastos fijos para imprevistos.", icon: Lock, color: "bg-green-100 text-green-700" },
-      { id: 3, title: "Evita gastos hormiga", desc: "El café diario suma. Identifica pequeños gastos innecesarios.", icon: Target, color: "bg-red-100 text-red-700" }
+      { id: 3, title: "Evita gastos hormiga", desc: "El café diario suma. Identifica pequeños gastos innecesarios.", icon: Target, color: "bg-red-100 text-red-700" },
+      { id: 4, title: "Interés Compuesto", desc: "El dinero genera dinero. Empieza a invertir lo antes posible.", icon: TrendingUp, color: "bg-purple-100 text-purple-700" }
     ],
     videos: [
-      { id: 1, title: "¿Cómo empezar a invertir?", duration: "10:05", thumbnail: "bg-indigo-900" },
-      { id: 2, title: "Entendiendo tu tarjeta de crédito", duration: "15:30", thumbnail: "bg-blue-800" },
-      { id: 3, title: "Libertad Financiera en 5 pasos", duration: "08:20", thumbnail: "bg-purple-900" }
+      { id: 'v1', youtubeId: 'SH4pZVd8kMs', title: "¿Qué es el Interés Compuesto?", duration: "05:20", thumbnail: "bg-indigo-900" },
+      { id: 'v2', youtubeId: '3X-zJ5kG388', title: "Regla 50/30/20 Explicada", duration: "08:15", thumbnail: "bg-blue-800" },
+      { id: 'v3', youtubeId: 'Kz65Stp_EKI', title: "Como empezar a invertir desde cero", duration: "12:30", thumbnail: "bg-purple-900" },
+      { id: 'v4', youtubeId: 'M5QY2_8704o', title: "Errores financieros a los 20s", duration: "10:05", thumbnail: "bg-gray-800" }
     ],
     courses: [
-      { id: 1, title: "Finanzas Personales 101", modules: "5 Módulos", level: "Principiante" },
-      { id: 2, title: "Inversiones Avanzadas", modules: "8 Módulos", level: "Avanzado" }
+      { 
+        id: 'c1', 
+        title: "Finanzas Personales 101", 
+        modules: "5 Módulos", 
+        level: "Principiante", 
+        duration: "2h 30m",
+        modulesList: [
+            { id: 'm1-1', title: "Diagnóstico Financiero Personal", time: "25 min" },
+            { id: 'm1-2', title: "Cómo armar un presupuesto", time: "40 min" },
+            { id: 'm1-3', title: "Eliminando deudas tóxicas", time: "30 min" },
+            { id: 'm1-4', title: "Tu primer fondo de ahorro", time: "25 min" },
+            { id: 'm1-5', title: "Introducción a la inversión", time: "30 min" },
+        ]
+      },
+      { 
+        id: 'c2', 
+        title: "Inversiones Avanzadas", 
+        modules: "8 Módulos", 
+        level: "Avanzado",
+        duration: "5h 15m",
+        modulesList: [
+            { id: 'm2-1', title: "Renta Fija vs Renta Variable", time: "45 min" },
+            { id: 'm2-2', title: "Análisis Fundamental de Acciones", time: "60 min" },
+            { id: 'm2-3', title: "ETFs y Fondos Indexados", time: "40 min" },
+            { id: 'm2-4', title: "Criptomonedas: Riesgos y Beneficios", time: "50 min" },
+            { id: 'm2-5', title: "Diversificación de Portafolio", time: "35 min" },
+            { id: 'm2-6', title: "Psicología del Trading", time: "45 min" },
+        ]
+      },
+      { 
+        id: 'c3', 
+        title: "Dominando tu Crédito", 
+        modules: "4 Módulos", 
+        level: "Intermedio",
+        duration: "1h 45m",
+        modulesList: [
+            { id: 'm3-1', title: "¿Cómo funciona el Score Crediticio?", time: "20 min" },
+            { id: 'm3-2', title: "Tarjetas de Crédito: Hacks", time: "30 min" },
+            { id: 'm3-3', title: "Préstamos Hipotecarios", time: "40 min" },
+            { id: 'm3-4', title: "Salir de Buró de Crédito", time: "15 min" },
+        ]
+      }
     ]
   };
-  const handleLoadContent = async (tab) => { setLoading(true); await simulateDelay(600); setActiveTab(tab); setLoading(false); };
+
+  const handleLoadContent = async (tab) => {
+    setLoading(true);
+    await simulateDelay(600);
+    setActiveTab(tab);
+    setLoading(false);
+  };
 
   return (
     <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2"><BookOpen size={28} className="text-indigo-600" /> Aprender</h2>
+      <VideoModal video={selectedVideo} onClose={() => setSelectedVideo(null)} />
+      <CourseModal course={selectedCourse} onClose={() => setSelectedCourse(null)} />
+
+      <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+        <BookOpen size={28} className="text-indigo-600" /> Aprender
+      </h2>
+
       <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
          {['tips', 'videos', 'courses'].map(tab => (
-           <button key={tab} onClick={() => handleLoadContent(tab)} disabled={loading} className={`px-6 py-2 rounded-full font-bold capitalize whitespace-nowrap transition-colors ${activeTab === tab ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>{tab === 'tips' ? 'Tips Rápidos' : tab === 'courses' ? 'Cursos' : tab}</button>
+           <button
+             key={tab}
+             onClick={() => handleLoadContent(tab)}
+             disabled={loading}
+             className={`px-6 py-2 rounded-full font-bold capitalize whitespace-nowrap transition-colors 
+               ${activeTab === tab ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'} 
+               ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+           >
+             {tab === 'tips' ? 'Tips Rápidos' : tab === 'courses' ? 'Cursos' : tab}
+           </button>
          ))}
       </div>
-      {loading ? <LoadingSpinner text="Cargando contenido..." /> : (
+
+      {loading ? <LoadingSpinner text="Cargando contenido educativo..." /> : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {activeTab === 'tips' && content.tips.map(tip => (
-            <div key={tip.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div key={tip.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow hover:-translate-y-1 transform duration-200">
               <div className={`w-12 h-12 rounded-xl ${tip.color} flex items-center justify-center mb-4`}><tip.icon size={24} /></div>
-              <h3 className="font-bold text-lg mb-2">{tip.title}</h3><p className="text-gray-500 text-sm leading-relaxed">{tip.desc}</p>
+              <h3 className="font-bold text-lg mb-2">{tip.title}</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">{tip.desc}</p>
             </div>
           ))}
+
           {activeTab === 'videos' && content.videos.map(vid => (
-            <div key={vid.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden group cursor-pointer">
-               <div className={`h-40 ${vid.thumbnail} relative flex items-center justify-center group-hover:opacity-90 transition-opacity`}><PlayCircle className="text-white opacity-80 group-hover:scale-110 transition-transform" size={48} /><span className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">{vid.duration}</span></div>
-               <div className="p-4"><h3 className="font-bold text-gray-800 group-hover:text-indigo-600 transition-colors">{vid.title}</h3><p className="text-xs text-gray-400 mt-1">Video Educativo</p></div>
+            <div key={vid.id} onClick={() => setSelectedVideo(vid)} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden group cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1">
+               <div className={`h-48 relative flex items-center justify-center overflow-hidden`}>
+                 <div className={`absolute inset-0 ${vid.thumbnail} opacity-90 group-hover:scale-110 transition-transform duration-500`}></div>
+                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
+                 <PlayCircle className="text-white opacity-90 group-hover:scale-125 transition-transform duration-300 drop-shadow-lg relative z-10" size={56} />
+                 <span className="absolute bottom-3 right-3 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded backdrop-blur-sm z-10">{vid.duration}</span>
+               </div>
+               <div className="p-5">
+                 <h3 className="font-bold text-gray-800 text-lg group-hover:text-indigo-600 transition-colors leading-tight mb-2">{vid.title}</h3>
+                 <div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center text-red-600"><Video size={12} /></div><p className="text-xs text-gray-500 font-medium">Video Educativo • YouTube</p></div>
+               </div>
             </div>
           ))}
+
           {activeTab === 'courses' && content.courses.map(course => (
-            <div key={course.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden group hover:border-indigo-200 transition-colors cursor-pointer">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><GraduationCap size={80} className="text-indigo-600" /></div>
-              <div className="relative z-10"><span className="inline-block px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full mb-3">{course.level}</span><h3 className="text-xl font-bold text-gray-800 mb-2">{course.title}</h3><p className="text-gray-500 text-sm flex items-center gap-2"><FileText size={16} /> {course.modules}</p><Button className="mt-4 w-full" variant="secondary">Ver Curso</Button></div>
+            <div key={course.id} onClick={() => setSelectedCourse(course)} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden group hover:border-indigo-300 transition-all hover:shadow-lg cursor-pointer hover:-translate-y-1">
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:rotate-12 duration-500"><GraduationCap size={100} className="text-indigo-600" /></div>
+              <div className="relative z-10">
+                <div className="flex justify-between items-start mb-4">
+                    <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full ${course.level === 'Principiante' ? 'bg-green-100 text-green-700' : course.level === 'Intermedio' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{course.level}</span>
+                    <span className="text-xs text-gray-400 font-medium flex items-center gap-1"><Clock size={12} /> {course.duration}</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-indigo-600 transition-colors">{course.title}</h3>
+                <p className="text-gray-500 text-sm flex items-center gap-2 mb-6"><FileText size={16} /> {course.modules}</p>
+                <Button className="w-full bg-white text-indigo-600 border-2 border-indigo-100 hover:bg-indigo-50 group-hover:border-indigo-200" variant="ghost">Empezar Curso</Button>
+              </div>
             </div>
           ))}
         </div>
@@ -604,7 +823,7 @@ const LoginScreen = ({ onLogin, onNavigateToRegister, showToast }) => {
       const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || "[]");
       const savedUser = users.find(u => u.email === form.email && u.password === form.password);
       if (savedUser) {
-        const userData = { ...savedUser }; // Clonar todo el objeto usuario incluyendo level, xp, etc.
+        const userData = { ...savedUser };
         localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(userData));
         showToast(`¡Bienvenido de nuevo, ${userData.name}!`, 'success');
         onLogin(userData);
@@ -725,7 +944,6 @@ const GoalDetailsScreen = ({ goal, onBack, onUpdateGoal, showToast, user, onUpda
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   
-  // Estados para el sistema de recompensas
   const [showRewardModal, setShowRewardModal] = useState(false);
   const [earnedReward, setEarnedReward] = useState(null);
   const [isLevelUp, setIsLevelUp] = useState(false);
@@ -777,35 +995,23 @@ const GoalDetailsScreen = ({ goal, onBack, onUpdateGoal, showToast, user, onUpda
       const metaCompletadaAhora = nuevoTotal >= goal.objetivo;
       
       if (metaCompletadaAhora) {
-          // --- LÓGICA DE GAMIFICACIÓN ---
-          const xpGain = 300; // XP por completar meta
+          const xpGain = 300;
           const currentXp = user.xp || 0;
           const currentLevel = user.level || 1;
           const newXp = currentXp + xpGain;
           const newLevel = Math.floor(newXp / XP_PER_LEVEL) + 1;
           const levelUp = newLevel > currentLevel;
-
-          // Seleccionar recompensa aleatoria
           const randomReward = REWARDS_POOL[Math.floor(Math.random() * REWARDS_POOL.length)];
           const newReward = { ...randomReward, date: new Date().toISOString() };
           
-          const updatedUser = {
-              ...user,
-              xp: newXp,
-              level: newLevel,
-              inventory: [...(user.inventory || []), newReward]
-          };
+          const updatedUser = { ...user, xp: newXp, level: newLevel, inventory: [...(user.inventory || []), newReward] };
 
-          // Actualizar LocalStorage Global
           const allUsers = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || "[]");
           const newAllUsers = allUsers.map(u => u.id === user.id ? updatedUser : u);
           localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(newAllUsers));
-          
-          // Actualizar Sesión y Estado App
           localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(updatedUser));
           onUpdateUser(updatedUser);
 
-          // Configurar Modal
           setEarnedReward(newReward);
           setIsLevelUp(levelUp);
           setShowRewardModal(true);
@@ -826,33 +1032,15 @@ const GoalDetailsScreen = ({ goal, onBack, onUpdateGoal, showToast, user, onUpda
 
   return (
     <div className="animate-in fade-in slide-in-from-right-10 duration-500 relative">
-      <RewardModal 
-        visible={showRewardModal} 
-        reward={earnedReward} 
-        levelUp={isLevelUp} 
-        userLevel={user?.level}
-        onClose={() => setShowRewardModal(false)} 
-      />
+      <RewardModal visible={showRewardModal} reward={earnedReward} levelUp={isLevelUp} userLevel={user?.level} onClose={() => setShowRewardModal(false)} />
 
       <div className="mb-6 flex items-center gap-4">
-        <button onClick={onBack} className="flex items-center gap-2 text-gray-500 hover:text-indigo-600 transition-colors font-medium" disabled={loading}>
-          <ChevronLeft size={20} /> Volver a Metas
-        </button>
+        <button onClick={onBack} className="flex items-center gap-2 text-gray-500 hover:text-indigo-600 transition-colors font-medium" disabled={loading}><ChevronLeft size={20} /> Volver a Metas</button>
       </div>
       
-      {completada && (
-        <div className="mb-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white p-4 rounded-2xl flex items-center gap-3 shadow-lg shadow-green-200">
-          <div className="bg-white/20 p-2 rounded-full"><Gift size={24} className="text-white" /></div>
-          <div><p className="font-bold">¡Meta Completada!</p><p className="text-sm opacity-90">¡Revisa tu perfil para ver tus recompensas!</p></div>
-        </div>
-      )}
+      {completada && <div className="mb-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white p-4 rounded-2xl flex items-center gap-3 shadow-lg shadow-green-200"><div className="bg-white/20 p-2 rounded-full"><Gift size={24} className="text-white" /></div><div><p className="font-bold">¡Meta Completada!</p><p className="text-sm opacity-90">¡Revisa tu perfil para ver tus recompensas!</p></div></div>}
       
-      {vencida && !completada && (
-        <div className="mb-6 bg-gradient-to-r from-amber-500 to-orange-600 text-white p-4 rounded-2xl flex items-center gap-3">
-          <AlertTriangle size={24} className="text-white" />
-          <div><p className="font-bold">Meta Vencida</p><p className="text-sm opacity-90">La fecha límite ha pasado y no se alcanzó el objetivo.</p></div>
-        </div>
-      )}
+      {vencida && !completada && <div className="mb-6 bg-gradient-to-r from-amber-500 to-orange-600 text-white p-4 rounded-2xl flex items-center gap-3"><AlertTriangle size={24} className="text-white" /><div><p className="font-bold">Meta Vencida</p><p className="text-sm opacity-90">La fecha límite ha pasado y no se alcanzó el objetivo.</p></div></div>}
       
       <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden mb-8">
         <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-8 text-white relative overflow-hidden">
@@ -1168,7 +1356,6 @@ export default function App() {
     switch (currentView) {
       case 'dashboard': return <Dashboard user={user} onNavigate={setCurrentView} />;
       case 'goals': return <GoalsScreen user={user} onBack={() => setCurrentView('dashboard')} onSelectGoal={(g) => { setSelectedGoal(g); setCurrentView('goalDetails'); }} showToast={showToast} />;
-      // Se pasa user y onUpdateUser a GoalDetailsScreen para manejar recompensas
       case 'goalDetails': return selectedGoal ? <GoalDetailsScreen goal={selectedGoal} onBack={() => setCurrentView('goals')} onUpdateGoal={(g) => setSelectedGoal(g)} showToast={showToast} user={user} onUpdateUser={handleUpdateUser} /> : <Dashboard user={user} onNavigate={setCurrentView} />;
       case 'profile': return <ProfileScreen user={user} onUpdateUser={handleUpdateUser} showToast={showToast} />;
       case 'simulator': return <SimulatorScreen showToast={showToast} />;
