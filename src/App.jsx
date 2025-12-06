@@ -716,7 +716,7 @@ const LoginScreen = ({ onLogin, onNavigateToRegister, showToast }) => {
              </div>
           </div>
           <div className="relative z-10">
-            <p className="text-sm text-indigo-200">© 2024 EduFinanciera Inc.</p>
+            <p className="text-sm text-indigo-200">© 2025 EduFinanciera Inc.</p>
           </div>
         </div>
         <div className="md:w-1/2 p-12 flex flex-col justify-center">
