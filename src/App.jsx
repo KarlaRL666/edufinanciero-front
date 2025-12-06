@@ -12,11 +12,11 @@ const STORAGE_KEYS = {
 const XP_PER_LEVEL = 500; // Experiencia necesaria para subir de nivel
 
 const REWARDS_POOL = [
-  { id: 'r1', type: 'course', title: 'Curso: Inversiones Bolsa Desde Cero', icon: GraduationCap, color: 'text-purple-600 bg-purple-100' },
+  { id: 'r1', type: 'course', title: 'Acceso VIP: Masterclass de Inversión', icon: GraduationCap, color: 'text-purple-600 bg-purple-100' },
   { id: 'r2', type: 'points', title: '500 Puntos Google Play', icon: PlayCircle, color: 'text-green-600 bg-green-100' },
   { id: 'r3', type: 'gift', title: 'Tarjeta Regalo Amazon $10', icon: Gift, color: 'text-orange-600 bg-orange-100' },
   { id: 'r4', type: 'premium', title: '1 Mes Suscripción Premium', icon: Star, color: 'text-yellow-600 bg-yellow-100' },
-  { id: 'r5', type: 'course', title: 'Masterclass: Libertad Financiera', icon: BookOpen, color: 'text-blue-600 bg-blue-100' }
+  { id: 'r5', type: 'course', title: 'Ebook: Libertad Financiera', icon: BookOpen, color: 'text-blue-600 bg-blue-100' }
 ];
 
 // Función para simular delay
@@ -150,7 +150,7 @@ const LoadingSpinner = ({ size = "md", text = "Cargando..." }) => {
   );
 };
 
-// --- MODALES (RECOMPENSA, VIDEO, CURSO) ---
+// --- MODALES (RECOMPENSA, VIDEO, QUIZ) ---
 
 const RewardModal = ({ visible, reward, levelUp, onClose, userLevel }) => {
   if (!visible) return null;
@@ -241,110 +241,132 @@ const VideoModal = ({ video, onClose }) => {
   );
 };
 
-const CourseModal = ({ course, onClose }) => {
-  const [progress, setProgress] = useState(0);
-  const [completedModules, setCompletedModules] = useState([]);
+const QuizModal = ({ quiz, onClose }) => {
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [score, setScore] = useState(0);
+  const [showResult, setShowResult] = useState(false);
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [isAnswerChecked, setIsAnswerChecked] = useState(false);
 
   useEffect(() => {
-    if (course) {
-      setCompletedModules([]);
-      setProgress(0);
+    if (quiz) {
+      setCurrentQuestion(0);
+      setScore(0);
+      setShowResult(false);
+      setSelectedOption(null);
+      setIsAnswerChecked(false);
     }
-  }, [course]);
+  }, [quiz]);
 
-  const toggleModule = (moduleId) => {
-    let newCompleted;
-    if (completedModules.includes(moduleId)) {
-      newCompleted = completedModules.filter(id => id !== moduleId);
-    } else {
-      newCompleted = [...completedModules, moduleId];
+  const handleOptionClick = (index) => {
+    if (isAnswerChecked) return;
+    setSelectedOption(index);
+    setIsAnswerChecked(true);
+    
+    if (index === quiz.questions[currentQuestion].correct) {
+      setScore(score + 1);
     }
-    setCompletedModules(newCompleted);
-    setProgress(Math.round((newCompleted.length / course.modulesList.length) * 100));
   };
 
-  if (!course) return null;
+  const handleNext = () => {
+    if (currentQuestion + 1 < quiz.questions.length) {
+      setCurrentQuestion(currentQuestion + 1);
+      setSelectedOption(null);
+      setIsAnswerChecked(false);
+    } else {
+      setShowResult(true);
+    }
+  };
+
+  if (!quiz) return null;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={onClose} />
-      <div className="bg-white w-full max-w-2xl h-[80vh] rounded-[2rem] overflow-hidden relative z-10 shadow-2xl animate-in slide-in-from-bottom-10 flex flex-col">
+      <div className="bg-white w-full max-w-lg rounded-[2rem] overflow-hidden relative z-10 shadow-2xl animate-in zoom-in-95 flex flex-col max-h-[90vh]">
         
-        {/* Header del Curso */}
-        <div className="bg-indigo-600 p-8 text-white shrink-0 relative overflow-hidden">
-            <div className="absolute top-0 right-0 opacity-10 transform translate-x-10 -translate-y-10">
-                <GraduationCap size={150} />
-            </div>
-            <button onClick={onClose} className="absolute top-4 right-4 bg-black/20 hover:bg-black/40 p-2 rounded-full transition-colors text-white z-20">
+        {/* Header */}
+        <div className="bg-indigo-600 p-6 text-white text-center relative shrink-0">
+            <button onClick={onClose} className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 p-2 rounded-full transition-colors text-white">
                 <X size={20} />
             </button>
-            <div className="relative z-10">
-                <span className="inline-block px-3 py-1 bg-white/20 text-white text-xs font-bold rounded-full mb-3 backdrop-blur-md">
-                    {course.level}
-                </span>
-                <h2 className="text-2xl md:text-3xl font-bold mb-2">{course.title}</h2>
-                <p className="text-indigo-100 text-sm">{course.modules} • Duración aprox: {course.duration}</p>
-            </div>
+            <h2 className="text-2xl font-bold mb-1">{quiz.title}</h2>
+            {!showResult && (
+                <p className="text-indigo-200 text-sm">Pregunta {currentQuestion + 1} de {quiz.questions.length}</p>
+            )}
         </div>
 
-        {/* Barra de Progreso */}
-        <div className="bg-indigo-50 px-8 py-4 border-b border-indigo-100 shrink-0">
-            <div className="flex justify-between text-sm font-bold text-indigo-900 mb-2">
-                <span>Tu Progreso</span>
-                <span>{progress}%</span>
-            </div>
-            <div className="w-full bg-indigo-200 rounded-full h-2 overflow-hidden">
-                <div 
-                    className="bg-indigo-600 h-2 rounded-full transition-all duration-500 ease-out" 
-                    style={{ width: `${progress}%` }}
-                ></div>
-            </div>
-        </div>
-
-        {/* Lista de Módulos (Scrollable) */}
-        <div className="overflow-y-auto flex-1 p-8 bg-gray-50">
-            <h3 className="font-bold text-gray-800 mb-4 uppercase text-xs tracking-wider">Temario del Curso</h3>
-            <div className="space-y-3">
-                {course.modulesList.map((module, index) => {
-                    const isDone = completedModules.includes(module.id);
-                    return (
-                        <div 
-                            key={module.id} 
-                            onClick={() => toggleModule(module.id)}
-                            className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center gap-4 group ${
-                                isDone 
-                                ? 'bg-green-50 border-green-200 shadow-sm' 
-                                : 'bg-white border-gray-200 hover:border-indigo-300 hover:shadow-md'
-                            }`}
-                        >
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                                isDone 
-                                ? 'bg-green-500 text-white' 
-                                : 'bg-gray-100 text-gray-400 group-hover:bg-indigo-100 group-hover:text-indigo-600'
-                            }`}>
-                                {isDone ? <CheckCircle2 size={16} /> : <span className="text-xs font-bold">{index + 1}</span>}
-                            </div>
-                            <div className="flex-1">
-                                <h4 className={`font-bold text-sm ${isDone ? 'text-green-800 line-through opacity-70' : 'text-gray-800'}`}>
-                                    {module.title}
-                                </h4>
-                                <p className="text-xs text-gray-500">{module.time}</p>
-                            </div>
-                            {!isDone && <PlayCircle size={20} className="text-gray-300 group-hover:text-indigo-500" />}
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-gray-200 bg-white shrink-0 flex justify-end">
-            {progress === 100 ? (
-                <Button className="w-full bg-green-600 hover:bg-green-700 shadow-green-200" onClick={onClose}>
-                    ¡Curso Completado! 🎉
-                </Button>
+        {/* Contenido */}
+        <div className="p-6 overflow-y-auto">
+            {showResult ? (
+                <div className="text-center py-8">
+                    <div className="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6 text-yellow-600">
+                        <Award size={48} />
+                    </div>
+                    <h3 className="text-3xl font-bold text-gray-800 mb-2">¡Quiz Completado!</h3>
+                    <p className="text-gray-500 mb-6">Tu puntuación final es:</p>
+                    <div className="text-5xl font-bold text-indigo-600 mb-8">{score} / {quiz.questions.length}</div>
+                    
+                    <div className="flex gap-3">
+                        <Button variant="secondary" onClick={onClose}>Cerrar</Button>
+                        <Button onClick={() => {
+                            setCurrentQuestion(0);
+                            setScore(0);
+                            setShowResult(false);
+                            setSelectedOption(null);
+                            setIsAnswerChecked(false);
+                        }}>Intentar de nuevo</Button>
+                    </div>
+                </div>
             ) : (
-                <p className="text-xs text-center w-full text-gray-400">Marca los módulos conforme los vayas viendo</p>
+                <>
+                    <div className="mb-6">
+                        <h3 className="text-xl font-bold text-gray-800 leading-relaxed">
+                            {quiz.questions[currentQuestion].question}
+                        </h3>
+                    </div>
+
+                    <div className="space-y-3 mb-6">
+                        {quiz.questions[currentQuestion].options.map((option, index) => {
+                            let optionClass = "border-gray-200 hover:border-indigo-300 hover:bg-gray-50";
+                            let icon = null;
+
+                            if (isAnswerChecked) {
+                                if (index === quiz.questions[currentQuestion].correct) {
+                                    optionClass = "bg-green-100 border-green-500 text-green-800";
+                                    icon = <CheckCircle2 size={20} className="text-green-600" />;
+                                } else if (index === selectedOption) {
+                                    optionClass = "bg-red-100 border-red-500 text-red-800";
+                                    icon = <AlertCircle size={20} className="text-red-600" />;
+                                } else {
+                                    optionClass = "border-gray-100 opacity-50";
+                                }
+                            } else if (selectedOption === index) {
+                                optionClass = "border-indigo-500 bg-indigo-50 text-indigo-700";
+                            }
+
+                            return (
+                                <button
+                                    key={index}
+                                    onClick={() => handleOptionClick(index)}
+                                    disabled={isAnswerChecked}
+                                    className={`w-full p-4 rounded-xl border-2 text-left transition-all flex justify-between items-center ${optionClass}`}
+                                >
+                                    <span className="font-medium">{option}</span>
+                                    {icon}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {isAnswerChecked && (
+                        <div className="animate-in slide-in-from-bottom-2 fade-in">
+                            <Button onClick={handleNext}>
+                                {currentQuestion + 1 === quiz.questions.length ? "Ver Resultados" : "Siguiente Pregunta"}
+                            </Button>
+                        </div>
+                    )}
+                </>
             )}
         </div>
       </div>
@@ -671,7 +693,7 @@ const LearnScreen = () => {
   const [activeTab, setActiveTab] = useState('tips');
   const [loading, setLoading] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState(null);
-  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [selectedQuiz, setSelectedQuiz] = useState(null);
 
   const content = {
     tips: [
@@ -687,47 +709,37 @@ const LearnScreen = () => {
       { id: 'v3', youtubeId: 'Vg4CL6GmvrU', title: "¿Cómo INVERTIR tu DINERO? Guía 2025", duration: "16:41", thumbnail: "bg-purple-900" },
       { id: 'v4', youtubeId: 'vCxbRuSG9S8', title: "5 hábitos que te hacen pobre en tus 20´s", duration: "07:35", thumbnail: "bg-gray-800" }
     ],
-    courses: [
-      { 
-        id: 'c1', 
-        title: "Finanzas Personales 101", 
-        modules: "5 Módulos", 
-        level: "Principiante", 
-        duration: "2h 30m",
-        modulesList: [
-            { id: 'm1-1', title: "Diagnóstico Financiero Personal", time: "25 min" },
-            { id: 'm1-2', title: "Cómo armar un presupuesto", time: "40 min" },
-            { id: 'm1-3', title: "Eliminando deudas tóxicas", time: "30 min" },
-            { id: 'm1-4', title: "Tu primer fondo de ahorro", time: "25 min" },
-            { id: 'm1-5', title: "Introducción a la inversión", time: "30 min" },
+    // Quizzes interactivos que reemplazan a los cursos
+    quizzes: [
+      {
+        id: 'q1',
+        title: "Básicos de Finanzas",
+        level: "Fácil",
+        questions: [
+            { question: "¿Qué es un fondo de emergencia?", options: ["Dinero para comprar regalos", "Ahorro para imprevistos (3-6 meses de gastos)", "Fondo para invertir en bolsa", "Dinero para vacaciones"], correct: 1 },
+            { question: "Según la regla 50/30/20, ¿cuánto debes destinar al ahorro?", options: ["50%", "10%", "20%", "30%"], correct: 2 },
+            { question: "¿Qué es la inflación?", options: ["Aumento generalizado de precios", "Bajada de precios", "Ganancia en inversiones", "Un tipo de impuesto"], correct: 0 }
         ]
       },
-      { 
-        id: 'c2', 
-        title: "Inversiones Avanzadas", 
-        modules: "8 Módulos", 
-        level: "Avanzado", 
-        duration: "5h 15m",
-        modulesList: [
-            { id: 'm2-1', title: "Renta Fija vs Renta Variable", time: "45 min" },
-            { id: 'm2-2', title: "Análisis Fundamental de Acciones", time: "60 min" },
-            { id: 'm2-3', title: "ETFs y Fondos Indexados", time: "40 min" },
-            { id: 'm2-4', title: "Criptomonedas: Riesgos y Beneficios", time: "50 min" },
-            { id: 'm2-5', title: "Diversificación de Portafolio", time: "35 min" },
-            { id: 'm2-6', title: "Psicología del Trading", time: "45 min" },
+      {
+        id: 'q2',
+        title: "Experto en Inversiones",
+        level: "Medio",
+        questions: [
+            { question: "¿Qué es una acción?", options: ["Un préstamo al gobierno", "Una parte propietaria de una empresa", "Una cuenta de ahorro", "Un seguro de vida"], correct: 1 },
+            { question: "¿Cuál de estos activos suele tener menor riesgo?", options: ["Criptomonedas", "Acciones individuales", "Bonos del Gobierno (Cetes)", "Startups"], correct: 2 },
+            { question: "¿Qué es el interés compuesto?", options: ["Interés que solo se paga una vez", "Ganar intereses sobre los intereses generados", "Interés fijo bancario", "Impuesto a las ganancias"], correct: 1 },
+            { question: "¿Qué significa diversificar?", options: ["Poner todo el dinero en Apple", "No invertir nada", "Distribuir la inversión en varios activos para reducir riesgo", "Gastar el dinero en diferentes tiendas"], correct: 2 }
         ]
       },
-      { 
-        id: 'c3', 
-        title: "Dominando tu Crédito", 
-        modules: "4 Módulos", 
-        level: "Intermedio", 
-        duration: "1h 45m",
-        modulesList: [
-            { id: 'm3-1', title: "¿Cómo funciona el Score Crediticio?", time: "20 min" },
-            { id: 'm3-2', title: "Tarjetas de Crédito: Hacks", time: "30 min" },
-            { id: 'm3-3', title: "Préstamos Hipotecarios", time: "40 min" },
-            { id: 'm3-4', title: "Salir de Buró de Crédito", time: "15 min" },
+      {
+        id: 'q3',
+        title: "Tarjetas y Crédito",
+        level: "Difícil",
+        questions: [
+            { question: "¿Qué es el pago mínimo de una tarjeta?", options: ["Lo ideal para pagar", "El pago para no generar intereses", "La cantidad mínima para no caer en mora (pero genera intereses)", "La anualidad de la tarjeta"], correct: 2 },
+            { question: "¿Qué es el CAT?", options: ["Costo Anual Total", "Comisión Anual de Tarjeta", "Crédito a Tasa", "Cargo Automático Total"], correct: 0 },
+            { question: "Si eres 'totalero', ¿cuántos intereses pagas?", options: ["Muchos", "El 50%", "Cero", "Solo el IVA"], correct: 2 }
         ]
       }
     ]
@@ -743,14 +755,14 @@ const LearnScreen = () => {
   return (
     <div className="animate-in fade-in slide-in-from-right-4 duration-500">
       <VideoModal video={selectedVideo} onClose={() => setSelectedVideo(null)} />
-      <CourseModal course={selectedCourse} onClose={() => setSelectedCourse(null)} />
+      <QuizModal quiz={selectedQuiz} onClose={() => setSelectedQuiz(null)} />
 
       <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
         <BookOpen size={28} className="text-indigo-600" /> Aprender
       </h2>
 
-      <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
-         {['tips', 'videos', 'courses'].map(tab => (
+      <div className="flex gap-4 mb-8 overflow-x-auto pb-2 scrollbar-hide">
+         {['tips', 'videos', 'quizzes'].map(tab => (
            <button
              key={tab}
              onClick={() => handleLoadContent(tab)}
@@ -759,12 +771,14 @@ const LearnScreen = () => {
                ${activeTab === tab ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'} 
                ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
            >
-             {tab === 'tips' ? 'Tips Rápidos' : tab === 'courses' ? 'Cursos' : tab}
+             {tab === 'tips' ? 'Tips Rápidos' : tab === 'quizzes' ? 'Quizzes' : tab}
            </button>
          ))}
       </div>
 
-      {loading ? <LoadingSpinner text="Cargando contenido educativo..." /> : (
+      {loading ? (
+        <LoadingSpinner text="Cargando contenido..." />
+      ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {activeTab === 'tips' && content.tips.map(tip => (
             <div key={tip.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow hover:-translate-y-1 transform duration-200">
@@ -789,17 +803,17 @@ const LearnScreen = () => {
             </div>
           ))}
 
-          {activeTab === 'courses' && content.courses.map(course => (
-            <div key={course.id} onClick={() => setSelectedCourse(course)} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden group hover:border-indigo-300 transition-all hover:shadow-lg cursor-pointer hover:-translate-y-1">
-              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:rotate-12 duration-500"><GraduationCap size={100} className="text-indigo-600" /></div>
+          {activeTab === 'quizzes' && content.quizzes.map(quiz => (
+            <div key={quiz.id} onClick={() => setSelectedQuiz(quiz)} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden group hover:border-indigo-300 transition-all hover:shadow-lg cursor-pointer hover:-translate-y-1">
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:rotate-12 duration-500"><FileText size={100} className="text-indigo-600" /></div>
               <div className="relative z-10">
                 <div className="flex justify-between items-start mb-4">
-                    <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full ${course.level === 'Principiante' ? 'bg-green-100 text-green-700' : course.level === 'Intermedio' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{course.level}</span>
-                    <span className="text-xs text-gray-400 font-medium flex items-center gap-1"><Clock size={12} /> {course.duration}</span>
+                    <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full ${quiz.level === 'Fácil' ? 'bg-green-100 text-green-700' : quiz.level === 'Medio' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{quiz.level}</span>
+                    <span className="text-xs text-gray-400 font-medium flex items-center gap-1"><CheckCircle size={12} /> {quiz.questions.length} Preguntas</span>
                 </div>
-                <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-indigo-600 transition-colors">{course.title}</h3>
-                <p className="text-gray-500 text-sm flex items-center gap-2 mb-6"><FileText size={16} /> {course.modules}</p>
-                <Button className="w-full bg-white text-indigo-600 border-2 border-indigo-100 hover:bg-indigo-50 group-hover:border-indigo-200" variant="ghost">Empezar Curso</Button>
+                <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-indigo-600 transition-colors">{quiz.title}</h3>
+                <p className="text-gray-500 text-sm flex items-center gap-2 mb-6">Pon a prueba tu conocimiento financiero</p>
+                <Button className="w-full bg-white text-indigo-600 border-2 border-indigo-100 hover:bg-indigo-50 group-hover:border-indigo-200" variant="ghost">Iniciar Quiz</Button>
               </div>
             </div>
           ))}
