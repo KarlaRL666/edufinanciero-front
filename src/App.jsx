@@ -666,7 +666,7 @@ const SimulatorScreen = ({ showToast }) => {
   );
 };
 
-// --- LEARNSCREEN (ACTUALIZADO CON MODALES FUNCIONALES) ---
+// --- LEARNSCREEN (ACTUALIZADO CON MODALES FUNCIONALES Y VIDEOS ESPECÍFICOS) ---
 const LearnScreen = () => {
   const [activeTab, setActiveTab] = useState('tips');
   const [loading, setLoading] = useState(false);
@@ -680,11 +680,12 @@ const LearnScreen = () => {
       { id: 3, title: "Evita gastos hormiga", desc: "El café diario suma. Identifica pequeños gastos innecesarios.", icon: Target, color: "bg-red-100 text-red-700" },
       { id: 4, title: "Interés Compuesto", desc: "El dinero genera dinero. Empieza a invertir lo antes posible.", icon: TrendingUp, color: "bg-purple-100 text-purple-700" }
     ],
+    // Videos actualizados con la información proporcionada
     videos: [
-      { id: 'v1', youtubeId: 'SH4pZVd8kMs', title: "¿Qué es el Interés Compuesto?", duration: "05:20", thumbnail: "bg-indigo-900" },
-      { id: 'v2', youtubeId: '3X-zJ5kG388', title: "Regla 50/30/20 Explicada", duration: "08:15", thumbnail: "bg-blue-800" },
-      { id: 'v3', youtubeId: 'Kz65Stp_EKI', title: "Como empezar a invertir desde cero", duration: "12:30", thumbnail: "bg-purple-900" },
-      { id: 'v4', youtubeId: 'M5QY2_8704o', title: "Errores financieros a los 20s", duration: "10:05", thumbnail: "bg-gray-800" }
+      { id: 'v1', youtubeId: '7h0USmJk2-A', title: "¿Qué es el INTERÉS COMPUESTO?", duration: "07:38", thumbnail: "bg-indigo-900" },
+      { id: 'v2', youtubeId: 'TwpF7hawfGg', title: "La regla del 50-30-20 y por qué no funciona", duration: "01:56", thumbnail: "bg-blue-800" },
+      { id: 'v3', youtubeId: 'Vg4CL6GmvrU', title: "¿Cómo INVERTIR tu DINERO? Guía 2025", duration: "16:41", thumbnail: "bg-purple-900" },
+      { id: 'v4', youtubeId: 'vCxbRuSG9S8', title: "5 hábitos que te hacen pobre en tus 20´s", duration: "07:35", thumbnail: "bg-gray-800" }
     ],
     courses: [
       { 
@@ -705,7 +706,7 @@ const LearnScreen = () => {
         id: 'c2', 
         title: "Inversiones Avanzadas", 
         modules: "8 Módulos", 
-        level: "Avanzado",
+        level: "Avanzado", 
         duration: "5h 15m",
         modulesList: [
             { id: 'm2-1', title: "Renta Fija vs Renta Variable", time: "45 min" },
@@ -720,7 +721,7 @@ const LearnScreen = () => {
         id: 'c3', 
         title: "Dominando tu Crédito", 
         modules: "4 Módulos", 
-        level: "Intermedio",
+        level: "Intermedio", 
         duration: "1h 45m",
         modulesList: [
             { id: 'm3-1', title: "¿Cómo funciona el Score Crediticio?", time: "20 min" },
