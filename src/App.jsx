@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Lock, CreditCard, Target, Award, BookOpen, TrendingUp, Plus, Trash2, ChevronLeft, LogOut, Calendar, DollarSign, History, Home, Settings, Menu, X, Calculator, Video, FileText, GraduationCap, Lightbulb, PlayCircle, Save } from 'lucide-react';
+import { User, Lock, CreditCard, Target, Award, BookOpen, TrendingUp, Plus, Trash2, ChevronLeft, LogOut, Calendar, DollarSign, History, Home, Settings, Menu, X, Calculator, Video, FileText, GraduationCap, Lightbulb, PlayCircle, Save, CheckCircle, AlertCircle, Info } from 'lucide-react';
 
 // --- UTILIDADES DE ALMACENAMIENTO LOCAL ---
 const STORAGE_KEYS = {
@@ -70,6 +70,42 @@ const Card = ({ title, icon: Icon, onClick, color = "bg-white", description }) =
     </div>
   </div>
 );
+
+// --- COMPONENTE DE NOTIFICACIONES (TOAST) ---
+const ToastContainer = ({ toasts, removeToast }) => {
+  return (
+    <div className="fixed top-4 right-4 z-[100] flex flex-col gap-3 max-w-sm w-full pointer-events-none">
+      {toasts.map((toast) => (
+        <div 
+          key={toast.id} 
+          className={`
+            pointer-events-auto flex items-center gap-3 p-4 rounded-xl shadow-lg border animate-in slide-in-from-right duration-300
+            ${toast.type === 'success' ? 'bg-white border-green-100 text-gray-800' : ''}
+            ${toast.type === 'error' ? 'bg-white border-red-100 text-gray-800' : ''}
+            ${toast.type === 'info' ? 'bg-white border-blue-100 text-gray-800' : ''}
+          `}
+        >
+          <div className={`
+            p-2 rounded-full shrink-0
+            ${toast.type === 'success' ? 'bg-green-100 text-green-600' : ''}
+            ${toast.type === 'error' ? 'bg-red-100 text-red-600' : ''}
+            ${toast.type === 'info' ? 'bg-blue-100 text-blue-600' : ''}
+          `}>
+            {toast.type === 'success' && <CheckCircle size={20} />}
+            {toast.type === 'error' && <AlertCircle size={20} />}
+            {toast.type === 'info' && <Info size={20} />}
+          </div>
+          <div className="flex-1">
+            <p className="font-medium text-sm">{toast.message}</p>
+          </div>
+          <button onClick={() => removeToast(toast.id)} className="text-gray-400 hover:text-gray-600">
+            <X size={16} />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 // --- COMPONENTES DE ESTRUCTURA (LAYOUT) ---
 
@@ -142,7 +178,7 @@ const Sidebar = ({ currentView, onNavigate, onLogout, user, mobileOpen, setMobil
 
 // --- PANTALLAS ---
 
-const ProfileScreen = ({ user, onUpdateUser }) => {
+const ProfileScreen = ({ user, onUpdateUser, showToast }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({ name: user.name, email: user.email });
   const [stats, setStats] = useState({ totalGoals: 0, completedGoals: 0 });
@@ -159,6 +195,7 @@ const ProfileScreen = ({ user, onUpdateUser }) => {
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(updatedUser));
     onUpdateUser(updatedUser);
     setIsEditing(false);
+    showToast('Perfil actualizado correctamente', 'success');
   };
 
   return (
@@ -239,7 +276,7 @@ const ProfileScreen = ({ user, onUpdateUser }) => {
   );
 };
 
-const SimulatorScreen = () => {
+const SimulatorScreen = ({ showToast }) => {
   const [mode, setMode] = useState('investment'); // 'investment' | 'credit'
   
   // States Inversión
@@ -256,6 +293,10 @@ const SimulatorScreen = () => {
 
   const calculateInvestment = (e) => {
     e.preventDefault();
+    if(!invAmount || !invRate || !invTime) {
+        showToast('Por favor completa todos los campos', 'error');
+        return;
+    }
     const P = parseFloat(invAmount);
     const r = parseFloat(invRate) / 100 / 12; // Tasa mensual simple
     const t = parseFloat(invTime);
@@ -263,16 +304,27 @@ const SimulatorScreen = () => {
     // Fórmula interés compuesto: A = P(1 + r)^t
     const A = P * Math.pow((1 + r), t);
     setInvResult({ total: A, interest: A - P });
+    showToast('Cálculo de inversión realizado', 'success');
   };
 
   const calculateCredit = (e) => {
     e.preventDefault();
+    if(!credAmount || !credRate || !credDate) {
+        showToast('Por favor completa todos los campos', 'error');
+        return;
+    }
     const P = parseFloat(credAmount);
     const annualRate = parseFloat(credRate) / 100;
     
     // Calcular tiempo en años entre hoy y la fecha elegida
     const start = new Date();
     const end = new Date(credDate);
+    
+    if (end <= start) {
+        showToast('La fecha debe ser futura', 'error');
+        return;
+    }
+
     const diffTime = Math.abs(end - start);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
     const diffYears = diffDays / 365;
@@ -282,6 +334,7 @@ const SimulatorScreen = () => {
     const total = P + interest;
     
     setCredResult({ total, interest, days: diffDays });
+    showToast('Cálculo de crédito realizado', 'success');
   };
 
   return (
@@ -459,7 +512,7 @@ const LearnScreen = () => {
 
 // --- PANTALLAS DE LOGIN/REGISTRO Y DASHBOARD ---
 
-const LoginScreen = ({ onLogin, onNavigateToRegister }) => {
+const LoginScreen = ({ onLogin, onNavigateToRegister, showToast }) => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -468,6 +521,7 @@ const LoginScreen = ({ onLogin, onNavigateToRegister }) => {
     e.preventDefault();
     if (!form.email || !form.password) {
       setError("Completa todos los campos");
+      showToast("Completa todos los campos", 'error');
       return;
     }
     setLoading(true);
@@ -481,6 +535,7 @@ const LoginScreen = ({ onLogin, onNavigateToRegister }) => {
       
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
       seedData();
+      showToast(`¡Bienvenido de nuevo, ${user.name}!`, 'success');
       onLogin(user);
       setLoading(false);
     }, 800);
@@ -524,18 +579,22 @@ const LoginScreen = ({ onLogin, onNavigateToRegister }) => {
   );
 };
 
-const RegisterScreen = ({ onRegisterSuccess, onNavigateToLogin }) => {
+const RegisterScreen = ({ onRegisterSuccess, onNavigateToLogin, showToast }) => {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.name || !form.email || !form.password) return;
+    if (!form.name || !form.email || !form.password) {
+        showToast("Completa todos los campos", 'error');
+        return;
+    }
     setLoading(true);
     setTimeout(() => {
       const newUser = { id: Date.now(), name: form.name, email: form.email };
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(newUser));
       seedData();
+      showToast("¡Cuenta creada con éxito!", 'success');
       onRegisterSuccess(newUser);
       setLoading(false);
     }, 800);
@@ -557,7 +616,7 @@ const RegisterScreen = ({ onRegisterSuccess, onNavigateToLogin }) => {
   );
 };
 
-const GoalDetailsScreen = ({ goal, onBack, onUpdateGoal }) => {
+const GoalDetailsScreen = ({ goal, onBack, onUpdateGoal, showToast }) => {
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
@@ -571,7 +630,10 @@ const GoalDetailsScreen = ({ goal, onBack, onUpdateGoal }) => {
 
   const handleDeposit = (e) => {
     e.preventDefault();
-    if (!amount || amount <= 0) return;
+    if (!amount || amount <= 0) {
+        showToast("Ingresa un monto válido", 'error');
+        return;
+    }
     setLoading(true);
     const depositAmount = Number(amount);
     
@@ -586,6 +648,7 @@ const GoalDetailsScreen = ({ goal, onBack, onUpdateGoal }) => {
         return g;
       });
       localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(updatedGoals));
+      showToast("¡Ahorro registrado exitosamente!", 'success');
       onUpdateGoal(updatedGoals.find(g => g.id === goal.id));
       setHistory(prev => [newTransaction, ...prev]);
       setAmount("");
@@ -650,7 +713,7 @@ const GoalDetailsScreen = ({ goal, onBack, onUpdateGoal }) => {
   );
 };
 
-const GoalsScreen = ({ onBack, user, onSelectGoal }) => {
+const GoalsScreen = ({ onBack, user, onSelectGoal, showToast }) => {
   const [metas, setMetas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -664,12 +727,16 @@ const GoalsScreen = ({ onBack, user, onSelectGoal }) => {
   }, [user.id]);
 
   const handleAddMeta = () => {
-    if (!newMeta.titulo.trim() || !newMeta.objetivo) return;
+    if (!newMeta.titulo.trim() || !newMeta.objetivo) {
+        showToast("Completa la información de la meta", 'error');
+        return;
+    }
     const metaData = { id: Date.now(), titulo: newMeta.titulo, actual: 0, objetivo: Number(newMeta.objetivo), userId: user.id };
     const updatedGoals = [...metas, metaData];
     setMetas(updatedGoals);
     const allGoals = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || "[]");
     localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify([...allGoals, metaData]));
+    showToast("¡Meta creada exitosamente!", 'success');
     setNewMeta({ titulo: "", objetivo: "" });
     setShowModal(false);
   };
@@ -681,6 +748,7 @@ const GoalsScreen = ({ onBack, user, onSelectGoal }) => {
     const allGoals = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || "[]");
     const newAllGoals = allGoals.filter(m => m.id !== id);
     localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(newAllGoals));
+    showToast("Meta eliminada", 'info');
   };
 
   return (
@@ -857,6 +925,20 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [selectedGoal, setSelectedGoal] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [toasts, setToasts] = useState([]);
+
+  // Toast Helper
+  const showToast = (message, type = 'success') => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 3000);
+  };
+
+  const removeToast = (id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
 
   useEffect(() => {
     const savedUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
@@ -867,54 +949,64 @@ export default function App() {
   }, []);
 
   const handleLogin = (userData) => { setUser(userData); setCurrentView('dashboard'); };
-  const handleLogout = () => { setUser(null); localStorage.removeItem(STORAGE_KEYS.CURRENT_USER); setCurrentView('login'); };
+  const handleLogout = () => { 
+      setUser(null); 
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_USER); 
+      setCurrentView('login');
+      showToast("Sesión cerrada correctamente", 'info');
+  };
   const handleUpdateUser = (updatedUser) => { setUser(updatedUser); };
   
   const renderContent = () => {
     switch (currentView) {
       case 'dashboard': return <Dashboard user={user} onNavigate={setCurrentView} />;
-      case 'goals': return <GoalsScreen user={user} onBack={() => setCurrentView('dashboard')} onSelectGoal={(g) => { setSelectedGoal(g); setCurrentView('goalDetails'); }} />;
-      case 'goalDetails': return selectedGoal ? <GoalDetailsScreen goal={selectedGoal} onBack={() => setCurrentView('goals')} onUpdateGoal={(g) => setSelectedGoal(g)} /> : <Dashboard user={user} onNavigate={setCurrentView} />;
-      case 'profile': return <ProfileScreen user={user} onUpdateUser={handleUpdateUser} />;
-      case 'simulator': return <SimulatorScreen />;
+      case 'goals': return <GoalsScreen user={user} onBack={() => setCurrentView('dashboard')} onSelectGoal={(g) => { setSelectedGoal(g); setCurrentView('goalDetails'); }} showToast={showToast} />;
+      case 'goalDetails': return selectedGoal ? <GoalDetailsScreen goal={selectedGoal} onBack={() => setCurrentView('goals')} onUpdateGoal={(g) => setSelectedGoal(g)} showToast={showToast} /> : <Dashboard user={user} onNavigate={setCurrentView} />;
+      case 'profile': return <ProfileScreen user={user} onUpdateUser={handleUpdateUser} showToast={showToast} />;
+      case 'simulator': return <SimulatorScreen showToast={showToast} />;
       case 'learn': return <LearnScreen />;
       default: return <div className="p-10 text-center text-gray-500">Sección en construcción</div>;
     }
   };
 
-  if (!user) {
-    if (currentView === 'register') {
-      return <RegisterScreen onRegisterSuccess={handleLogin} onNavigateToLogin={() => setCurrentView('login')} />;
-    }
-    return <LoginScreen onLogin={handleLogin} onNavigateToRegister={() => setCurrentView('register')} />;
-  }
-
   return (
-    <div className="flex min-h-screen bg-gray-50 font-sans text-gray-900">
-      <Sidebar 
-        currentView={currentView} 
-        onNavigate={setCurrentView} 
-        onLogout={handleLogout} 
-        user={user} 
-        mobileOpen={mobileMenuOpen}
-        setMobileOpen={setMobileMenuOpen}
-      />
+    <div className="flex min-h-screen bg-gray-50 font-sans text-gray-900 relative">
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
       
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        <div className="md:hidden bg-white border-b border-gray-100 p-4 flex justify-between items-center shadow-sm z-30">
-           <div className="flex items-center gap-2 font-bold text-indigo-700">
-             <TrendingUp size={20} /> EduFinanciera
-           </div>
-           <button onClick={() => setMobileMenuOpen(true)} className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
-             <Menu size={24} />
-           </button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">
-          <div className="max-w-7xl mx-auto">
-             {renderContent()}
-          </div>
-        </div>
-      </main>
+      {!user ? (
+        currentView === 'register' ? (
+            <RegisterScreen onRegisterSuccess={handleLogin} onNavigateToLogin={() => setCurrentView('login')} showToast={showToast} />
+        ) : (
+            <LoginScreen onLogin={handleLogin} onNavigateToRegister={() => setCurrentView('register')} showToast={showToast} />
+        )
+      ) : (
+        <>
+            <Sidebar 
+                currentView={currentView} 
+                onNavigate={setCurrentView} 
+                onLogout={handleLogout} 
+                user={user} 
+                mobileOpen={mobileMenuOpen}
+                setMobileOpen={setMobileMenuOpen}
+            />
+            
+            <main className="flex-1 flex flex-col h-screen overflow-hidden">
+                <div className="md:hidden bg-white border-b border-gray-100 p-4 flex justify-between items-center shadow-sm z-30">
+                <div className="flex items-center gap-2 font-bold text-indigo-700">
+                    <TrendingUp size={20} /> EduFinanciera
+                </div>
+                <button onClick={() => setMobileMenuOpen(true)} className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                    <Menu size={24} />
+                </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">
+                <div className="max-w-7xl mx-auto">
+                    {renderContent()}
+                </div>
+                </div>
+            </main>
+        </>
+      )}
     </div>
   );
 }
